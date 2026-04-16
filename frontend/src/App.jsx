@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import atriaLogo from './assets/atria.png'
 import isteLogo from './assets/iste-logo.svg'
 import './App.css'
+import Instructions from './Instructions'
 
 const initialForm = {
   usn: '',
@@ -13,6 +14,7 @@ function App() {
   const [status, setStatus] = useState('idle')
   const [message, setMessage] = useState('')
   const [entryId, setEntryId] = useState('')
+  const [page, setPage] = useState('register')
 
   const isSubmitting = status === 'submitting'
 
@@ -69,10 +71,20 @@ function App() {
       setMessage(payload.message)
       setEntryId(payload.entry.id)
       setForm(initialForm)
+      setPage('instructions')
     } catch (error) {
       setStatus('error')
       setMessage(error.message || 'Something went wrong.')
     }
+  }
+
+  function handleStart() {
+    // Navigate to game or something
+    alert('Game starting!')
+  }
+
+  if (page === 'instructions') {
+    return <Instructions onStart={handleStart} />
   }
 
   return (
@@ -164,6 +176,8 @@ function App() {
       </section>
     </main>
   )
+}
+
 }
 
 export default App
