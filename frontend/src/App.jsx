@@ -1,120 +1,168 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import { useMemo, useState } from 'react'
+import atriaLogo from './assets/atria.png'
+import isteLogo from './assets/iste-logo.svg'
 import './App.css'
 
+const initialForm = {
+  usn: '',
+  fullName: '',
+}
+
 function App() {
-  const [count, setCount] = useState(0)
+  const [form, setForm] = useState(initialForm)
+  const [status, setStatus] = useState('idle')
+  const [message, setMessage] = useState('')
+  const [entryId, setEntryId] = useState('')
+
+  const isSubmitting = status === 'submitting'
+
+  const readyLabel = useMemo(() => {
+    if (status === 'submitting') return 'SENDING...'
+    if (status === 'success') return 'ENTERED'
+    return 'READY'
+  }, [status])
+
+  function updateField(event) {
+    const { name, value } = event.target
+
+    setForm((current) => ({
+      ...current,
+      [name]: value,
+    }))
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault()
+
+    const trimmedUsn = form.usn.trim().toUpperCase()
+    const trimmedName = form.fullName.trim()
+
+    if (!trimmedUsn || !trimmedName) {
+      setStatus('error')
+      setMessage('Enter both your university seat number and full name.')
+      return
+    }
+
+    setStatus('submitting')
+    setMessage('')
+    setEntryId('')
+
+    try {
+      const response = await fetch('/api/registrations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          usn: trimmedUsn,
+          fullName: trimmedName,
+        }),
+      })
+
+      const payload = await response.json()
+
+      if (!response.ok) {
+        throw new Error(payload.error || 'Registration failed.')
+      }
+
+      setStatus('success')
+      setMessage(payload.message)
+      setEntryId(payload.entry.id)
+      setForm(initialForm)
+    } catch (error) {
+      setStatus('error')
+      setMessage(error.message || 'Something went wrong.')
+    }
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <main className="page-shell">
+      <div className="backdrop backdrop-left" />
+      <div className="backdrop backdrop-right" />
+
+      <div className="page-brand page-brand--left">
+        <img src={atriaLogo} alt="Atria Institute of Technology logo" />
+      </div>
+
+      <div className="page-brand page-brand--right">
+        <img src={isteLogo} alt="ISTE logo" />
+      </div>
+
+      <section className="poster">
+        <header className="poster__header" />
+
+        <div className="poster__hero">
+          <p className="eyebrow">The ultimate technical battle</p>
+          <h1>Vigyaanrang Entry</h1>
+          <p className="tagline">Where bytes and beats collide</p>
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
+
+        <form className="entry-form" onSubmit={handleSubmit}>
+          <label className="field">
+            <span>University seat number</span>
+            <div className="field__input">
+              <span className="field__icon" aria-hidden="true">
+                ◔
+              </span>
+              <input
+                autoComplete="off"
+                name="usn"
+                onChange={updateField}
+                placeholder="e.g. 1AT21CS001"
+                value={form.usn}
+              />
+            </div>
+          </label>
+
+          <label className="field">
+            <span>Full name</span>
+            <div className="field__input">
+              <span className="field__icon" aria-hidden="true">
+                ☺
+              </span>
+              <input
+                autoComplete="name"
+                name="fullName"
+                onChange={updateField}
+                placeholder="John Doe"
+                value={form.fullName}
+              />
+            </div>
+          </label>
+
+          <div className={`notice ${status === 'error' ? 'notice--error' : ''}`}>
+            <span className="notice__mark" aria-hidden="true">
+              i
+            </span>
+            <p>
+              Ensure your USN is correct. It is used for the leaderboard and prize
+              claims.
+            </p>
+          </div>
+
+          <button className="submit-button" type="submit" disabled={isSubmitting}>
+            <span>{readyLabel}</span>
+            <span aria-hidden="true" className="submit-button__bolt">
+              ⚡
+            </span>
+          </button>
+
+          <p className="helper-copy">
+            By entering, you agree to the competition terms and fair play policy.
           </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
+
+          {message ? (
+            <div
+              className={`status-card ${status === 'success' ? 'status-card--success' : ''}`}
+              role="status"
+            >
+              <p>{message}</p>
+              {entryId ? <strong>Entry ID: {entryId}</strong> : null}
+            </div>
+          ) : null}
+        </form>
       </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+    </main>
   )
 }
 
